@@ -1,69 +1,154 @@
-import Image from "next/image";
+"use client";
+import React, { useState } from 'react';
+import { AnnouncementBar } from '@/components/AnnouncementBar';
+import { Navbar } from '@/components/Navbar';
+import { HeroSlider } from '@/components/HeroSlider';
+import { Categories } from '@/components/Categories';
+import { ProductShowcase } from '@/components/ProductShowcase';
+import { FabricStory } from '@/components/FabricStory';
+import { TrustBar } from '@/components/TrustBar';
+import { CommunityGrid } from '@/components/CommunityGrid';
+import { Footer } from '@/components/Footer';
+import { CartDrawer } from '@/components/CartDrawer';
+import { QuickViewModal } from '@/components/QuickViewModal';
+import { SearchModal } from '@/components/SearchModal';
+import { AccountModal } from '@/components/AccountModal';
+
+import { HERO_SLIDES, CATEGORIES, PRODUCTS, INSTAGRAM_POSTS } from '@/data/mockData';
+import { CartItem, Product } from '@/types/store';
 
 export default function Home() {
+  const [announcementVisible, setAnnouncementVisible] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+
+  const [wishlist, setWishlist] = useState<number[]>([2]);
+  const [cart, setCart] = useState<CartItem[]>([
+    {
+      id: 1,
+      productId: 1,
+      name: "L'Atelier Heavy Box Tee",
+      price: 2490,
+      size: "L",
+      color: "Raw Ecru",
+      quantity: 1,
+      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80"
+    }
+  ]);
+
+  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handleAddToCart = (product: Product, selectedSize = "M") => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.productId === product.id && item.size === selectedSize);
+      if (existing) {
+        return prev.map((item) =>
+          item === existing ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: Date.now(),
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          size: selectedSize,
+          color: product.color,
+          quantity: 1,
+          image: product.images[0]
+        }
+      ];
+    });
+    setCartOpen(true);
+  };
+
+  const handleUpdateQty = (index: number, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item, idx) => {
+          if (idx === index) {
+            const nextQty = item.quantity + delta;
+            return nextQty > 0 ? { ...item, quantity: nextQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
+    );
+  };
+
+  const handleRemoveFromCart = (index: number) => {
+    setCart((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const toggleWishlist = (id: number) => {
+    setWishlist((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1A1A1A] font-sans antialiased selection:bg-[#F5E5DC] selection:text-[#1A1A1A]">
+      <AnnouncementBar
+        visible={announcementVisible}
+        onClose={() => setAnnouncementVisible(false)}
+      />
+
+      <Navbar
+        totalCartCount={totalCartCount}
+        wishlistCount={wishlist.length}
+        onOpenMobileMenu={() => setMobileMenuOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenAccount={() => setAccountOpen(true)}
+        onOpenCart={() => setCartOpen(true)}
+        onOpenWishlist={() => alert(`You have ${wishlist.length} items saved in your wishlist.`)}
+      />
+
+      <main>
+        <HeroSlider slides={HERO_SLIDES} />
+        <Categories categories={CATEGORIES} />
+        <ProductShowcase
+          products={PRODUCTS}
+          wishlist={wishlist}
+          onToggleWishlist={toggleWishlist}
+          onAddToCart={handleAddToCart}
+          onQuickView={(p) => setQuickViewProduct(p)}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <FabricStory />
+        <TrustBar />
+        <CommunityGrid posts={INSTAGRAM_POSTS} />
       </main>
+
+      <Footer />
+
+      <CartDrawer
+        isOpen={cartOpen}
+        onClose={() => setCartOpen(false)}
+        cart={cart}
+        upsellProducts={PRODUCTS.slice(2, 4)}
+        onUpdateQty={handleUpdateQty}
+        onRemoveItem={handleRemoveFromCart}
+        onAddToCart={handleAddToCart}
+      />
+
+      <QuickViewModal
+        product={quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+        onAddToCart={handleAddToCart}
+      />
+
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
+
+      <AccountModal
+        isOpen={accountOpen}
+        onClose={() => setAccountOpen(false)}
+      />
     </div>
   );
 }
